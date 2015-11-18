@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
-
 module TicTacToe where
 
 
@@ -18,7 +16,7 @@ data Row = RowCons Field Field Field
 data Board = BoardCons Row Row Row
 
 -- | convenience type definitions
-type BoardOrMsg = Either Board String
+type BoardOrMsg = Either String Board
 type Choice = (Int, Int, Marker)
 
 instance Show Field where
@@ -33,13 +31,6 @@ instance Show Row where
 instance Show Board where
   show (BoardCons r0 r1 r2) =  show r0 ++ "\n" ++ show r1 ++ "\n" ++ show r2 
 
-instance Show BoardOrMsg where
-  show bmsg = case bmsg of 
-    (Left b) -> show b
-    (Right msg) -> msg
-
-
-
 -- | creates the initial empty board with only empty fields
 initialBoard :: BoardOrMsg
 initialBoard = let initialRows = replicate 3 (RowCons Empty Empty Empty)
@@ -47,15 +38,15 @@ initialBoard = let initialRows = replicate 3 (RowCons Empty Empty Empty)
 
 boardFromRows :: [Row] -> BoardOrMsg
 boardFromRows rows
-  | length rows /= 3 = Right ("Not the right number of rows: " ++ show (length rows))
-  | otherwise = Left (BoardCons (rows !! 0) (rows !! 1) (rows !! 2))
+  | length rows /= 3 = Left ("Not the right number of rows: " ++ show (length rows))
+  | otherwise = Right (BoardCons (rows !! 0) (rows !! 1) (rows !! 2))
 
 
 makeChoice :: Choice -> BoardOrMsg -> BoardOrMsg
-makeChoice c@(col, row, _) (Left b)   
-  | isFree (col, row) b   = Left (makeChoicePure c b)
-  | otherwise             = Right ("The field (" ++ show col ++ "," ++ show row ++ ") is already used.")
-makeChoice c (Right msg)  = Right ("Can't make choice " ++ show c ++ "; " ++ msg)
+makeChoice c@(col, row, _) (Right b)   
+  | isFree (col, row) b   = Right (makeChoicePure c b)
+  | otherwise             = Left ("The field (" ++ show col ++ "," ++ show row ++ ") is already used.")
+makeChoice c (Left msg)   = Left ("Can't make choice " ++ show c ++ "; " ++ msg)
 
 
 -- | a player makes a choice by passing (x, y)-coordinates and a marker
@@ -81,8 +72,8 @@ newRow (col, m) (RowCons f0 f1 f2)
 
 
 checkWinner :: BoardOrMsg -> Maybe Marker
-checkWinner (Left b)    = checkWinnerPure b
-checkWinner (Right msg) = Nothing
+checkWinner (Right b)    = checkWinnerPure b
+checkWinner (Left msg) = Nothing
 
 checkWinnerPure :: Board -> Maybe Marker
 checkWinnerPure b = let res0 = checkRows b in

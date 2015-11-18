@@ -32,9 +32,10 @@ instance Show Board where
   show (BoardCons r0 r1 r2) =  show r0 ++ "\n" ++ show r1 ++ "\n" ++ show r2 
 
 -- | creates the initial empty board with only empty fields
-initialBoard :: BoardOrMsg
+initialBoard :: Board
 initialBoard = let initialRows = replicate 3 (RowCons Empty Empty Empty)
-                 in boardFromRows initialRows
+                 in case boardFromRows initialRows of
+                    (Right b) -> b
 
 boardFromRows :: [Row] -> BoardOrMsg
 boardFromRows rows
@@ -62,6 +63,19 @@ isFree (col, row) (BoardCons (RowCons f0 f1 f2) (RowCons f3 f4 f5) (RowCons f6 f
     let fields = [f0, f1, f2, f3, f4, f5, f6, f7, f8]
         index  = row*3 + col
         in fields !! index == Empty
+
+currentPlayer :: Board -> Marker
+currentPlayer b
+  | numberOfMarkers b Cross <= numberOfMarkers b Circle = Cross
+  | otherwise = Circle
+
+numberOfMarkers :: Board -> Marker -> Int
+numberOfMarkers b m = let fieldList = boardToList b
+                        in length $ filter (hasMarker m) fieldList
+
+hasMarker :: Marker -> Field -> Bool
+hasMarker _ Empty = False
+hasMarker m (FieldCons m') = m == m' 
 
 -- | helper function to create a new row
 newRow :: (Int, Marker) -> Row -> Row
@@ -159,6 +173,8 @@ checkDiagonals (BoardCons (RowCons f00 _ f10) (RowCons _ f1 _) (RowCons f12 _ f0
   | otherwise = Nothing
   
 
+boardToList :: Board -> [Field]
+boardToList (BoardCons r0 r1 r2) = rowToList r0 ++ rowToList r1 ++ rowToList r2
 
-
-
+rowToList :: Row -> [Field]
+rowToList (RowCons f0 f1 f2) = [f0, f1, f2]

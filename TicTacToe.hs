@@ -43,12 +43,16 @@ boardFromRows rows
   | otherwise = Right (BoardCons (rows !! 0) (rows !! 1) (rows !! 2))
 
 
+mkChoice :: Choice -> Board -> BoardOrMsg
+mkChoice c@(col, row, _) b
+  | isFree (col, row) b   = Right (makeChoicePure c b)
+  | otherwise             = Left ("The field (" ++ show col ++ "," ++ show row ++ ") is already used.")
+
 makeChoice :: Choice -> BoardOrMsg -> BoardOrMsg
 makeChoice c@(col, row, _) (Right b)   
   | isFree (col, row) b   = Right (makeChoicePure c b)
   | otherwise             = Left ("The field (" ++ show col ++ "," ++ show row ++ ") is already used.")
 makeChoice c (Left msg)   = Left ("Can't make choice " ++ show c ++ "; " ++ msg)
-
 
 -- | a player makes a choice by passing (x, y)-coordinates and a marker
 makeChoicePure :: (Int, Int, Marker) -> Board -> Board

@@ -50,8 +50,6 @@ mkChoice c@(col, row, m) b
   | otherwise = Left $ "Choice " ++ show c ++ " is not allowed."
   where validChoice = isEmpty (col, row) b && isValidIndex (col, row) 
         r = newRow (col, m) (rowAtIndex row b)
-        
-
 
 
 -- checks the range of the indices
@@ -99,10 +97,22 @@ newRow (col, m) (RowCons f0 f1 f2)
   | col == 1 = RowCons f0 (FieldCons m) f2
   | col == 2 = RowCons f0 f1 (FieldCons m)
 
-
-checkWinner :: BoardOrMsg -> Maybe Marker
-checkWinner (Right b)    = checkWinnerPure b
-checkWinner (Left msg) = Nothing
+checkWinner :: Board -> BoardOrMsg
+checkWinner b = 
+  let w0 = checkRows b in
+  case w0 of
+    Just m -> Left $ "Player won: " ++ show m 
+    Nothing -> let w1 = checkCols b in
+      case w1 of
+        Just m -> Left $ "Player won: " ++ show m 
+        Nothing -> let w2 = checkDiagonals b in
+          case w2 of
+            Just m -> Left $ "Player won: " ++ show m 
+            Nothing -> return b
+            
+checkWinner' :: BoardOrMsg -> Maybe Marker
+checkWinner' (Right b)    = checkWinnerPure b
+checkWinner' (Left msg) = Nothing
 
 checkWinnerPure :: Board -> Maybe Marker
 checkWinnerPure b = let res0 = checkRows b in

@@ -43,30 +43,41 @@ boardFromRows rows
   | otherwise = Right (BoardCons (rows !! 0) (rows !! 1) (rows !! 2))
 
 
+-- | let the player make a choice
 mkChoice :: Choice -> Board -> BoardOrMsg
-mkChoice c@(col, row, _) b
-  | isFree (col, row) b   = Right (makeChoicePure c b)
-  | otherwise             = Left ("The field (" ++ show col ++ "," ++ show row ++ ") is already used.")
-
-makeChoice :: Choice -> BoardOrMsg -> BoardOrMsg
-makeChoice c@(col, row, _) (Right b)   
-  | isFree (col, row) b   = Right (makeChoicePure c b)
-  | otherwise             = Left ("The field (" ++ show col ++ "," ++ show row ++ ") is already used.")
-makeChoice c (Left msg)   = Left ("Can't make choice " ++ show c ++ "; " ++ msg)
-
--- | a player makes a choice by passing (x, y)-coordinates and a marker
-makeChoicePure :: (Int, Int, Marker) -> Board -> Board
-makeChoicePure (col, row, m) (BoardCons r0 r1 r2) 
-  | row == 0 = BoardCons (newRow (col, m) r0) r1 r2
-  | row == 1 = BoardCons r0 (newRow (col, m) r1) r2
-  | row == 2 = BoardCons r0 r1 (newRow (col, m) r2)
+mkChoice c@(col, row, m) b 
+  | validChoice = Right $ replaceRow r row b
+  | otherwise = Left $ "Choice " ++ show c ++ " is not allowed."
+  where validChoice = isEmpty (col, row) b && isValidIndex (col, row) 
+        r = newRow (col, m) (rowAtIndex row b)
+        
 
 
-isFree :: (Int, Int) -> Board -> Bool
-isFree (col, row) (BoardCons (RowCons f0 f1 f2) (RowCons f3 f4 f5) (RowCons f6 f7 f8)) = 
-    let fields = [f0, f1, f2, f3, f4, f5, f6, f7, f8]
+
+-- checks the range of the indices
+isValidIndex :: (Int, Int) -> Bool
+isValidIndex (col, row) = col < 3 && row < 3 
+
+-- checks if the field at the given index is free
+isEmpty :: (Int, Int) -> Board -> Bool
+isEmpty (col, row) b = 
+    let fields = boardToList b
         index  = row*3 + col
         in fields !! index == Empty
+
+-- returns the row at the specified index from the board
+rowAtIndex :: Int -> Board -> Row
+rowAtIndex i (BoardCons r0 r1 r2)
+  | i == 0 = r0
+  | i == 1 = r1
+  | i == 2 = r2
+
+-- | replace a given row in the board row
+replaceRow :: Row -> Int -> Board -> Board
+replaceRow newRow i (BoardCons r0 r1 r2) 
+  | i == 0 = (BoardCons newRow r1 r2)
+  | i == 1 = (BoardCons r0 newRow r2) 
+  | i == 2 = (BoardCons r0 r1 newRow) 
 
 currentPlayer :: Board -> Marker
 currentPlayer b

@@ -1,5 +1,6 @@
 import TicTacToe
 import System.Exit
+import Text.Read
 
 main = tictactoe $ Right initialBoard
 
@@ -23,18 +24,29 @@ nextRound b = do
   putStrLn $ show b
 
   -- get choice from input
-  putStr "Column: "
-  col <- getLine
-  let colNum = read col
-  putStr "Row: "
-  row <- getLine
-  let rowNum = read row
+  --putStr "Column: "
+  --col <- getLine
+  --let colNum = read col
+  --putStr "Row: "
+  --row <- getLine
+  --let rowNum = read row
+
+  -- get choice from input
+  col <- getInput "Input column: "
+  row <- getInput "Input row: "
 
   -- make choice on board
-  case mkChoice (colNum,rowNum,p) b of
+  case mkChoice (col,row,p) b of
        Left msg -> do
          putStrLn msg
          nextRound b
        Right b' -> nextRound b'
   
   
+getInput :: String -> IO Int
+getInput msg = do
+  putStr msg
+  inp <- getLine
+  case readMaybe inp of
+    Nothing -> getInput msg
+    Just n -> return n

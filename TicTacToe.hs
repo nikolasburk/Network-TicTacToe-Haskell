@@ -48,7 +48,7 @@ mkChoice :: Choice -> Board -> BoardOrMsg
 mkChoice c@(col, row, m) b 
   | validChoice = Right $ replaceRow r row b
   | otherwise = Left $ "Choice " ++ show c ++ " is not allowed."
-  where validChoice = isEmpty (col, row) b && isValidIndex (col, row) 
+  where validChoice = isValidIndex (col, row) && isEmpty (col, row) b
         r = newRow (col, m) (rowAtIndex row b)
 
 
@@ -97,19 +97,6 @@ newRow (col, m) (RowCons f0 f1 f2)
   | col == 1 = RowCons f0 (FieldCons m) f2
   | col == 2 = RowCons f0 f1 (FieldCons m)
 
-checkWinner :: Board -> BoardOrMsg
-checkWinner b = 
-  let w0 = checkRows b in
-  case w0 of
-    Just m -> Left $ "Player won: " ++ show m 
-    Nothing -> let w1 = checkCols b in
-      case w1 of
-        Just m -> Left $ "Player won: " ++ show m 
-        Nothing -> let w2 = checkDiagonals b in
-          case w2 of
-            Just m -> Left $ "Player won: " ++ show m 
-            Nothing -> return b
-            
 checkWinner' :: BoardOrMsg -> Maybe Marker
 checkWinner' (Right b)    = checkWinnerPure b
 checkWinner' (Left msg) = Nothing

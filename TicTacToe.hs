@@ -37,6 +37,7 @@ initialBoard = let initialRows = replicate 3 (RowCons Empty Empty Empty)
                  in case boardFromRows initialRows of
                     (Right b) -> b
 
+
 boardFromRows :: [Row] -> BoardOrMsg
 boardFromRows rows
   | length rows /= 3 = Left ("Not the right number of rows: " ++ show (length rows))

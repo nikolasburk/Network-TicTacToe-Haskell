@@ -24,14 +24,6 @@ nextRound b = do
   putStrLn $ show b
 
   -- get choice from input
-  --putStr "Column: "
-  --col <- getLine
-  --let colNum = read col
-  --putStr "Row: "
-  --row <- getLine
-  --let rowNum = read row
-
-  -- get choice from input
   col <- getInput "Input column: "
   row <- getInput "Input row: "
 
@@ -41,8 +33,8 @@ nextRound b = do
          putStrLn msg
          nextRound b
        Right b' -> nextRound b'
-  
-  
+
+
 getInput :: String -> IO Int
 getInput msg = do
   putStr msg

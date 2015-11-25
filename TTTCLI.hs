@@ -1,6 +1,7 @@
 import TicTacToe
 import System.Exit
 import Text.Read
+import Board
 
 main = tictactoe $ Right initialBoard
 

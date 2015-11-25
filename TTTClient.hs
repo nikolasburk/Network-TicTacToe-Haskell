@@ -29,7 +29,6 @@ receiveMsg p = do
   m <- hGetLine $ handle p
   let msg = stringToMsg m
   case msgType msg of
-    --BOARD -> putStrLn ("BOARD:\n" ++ (show (decodeBoard (content msg))))
     BOARD -> putStrLn ("BOARD:\n" ++ show (decodeBoard (tail $ content msg)))
     _ -> print msg
   return msg
@@ -47,8 +46,6 @@ getPlayerFromConnection hostname port = do
   -- | create the server's address using the input parameters
   addrinfos <- getAddrInfo Nothing (Just hostname) (Just port)
   let serveraddr = head addrinfos
-
-  putStrLn $ "did create server address: " ++ show serveraddr
 
   -- | create a TCP socket for the incoming data
   sock <- socket (addrFamily serveraddr) Stream defaultProtocol

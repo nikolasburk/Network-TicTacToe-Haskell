@@ -29,8 +29,6 @@ serveTTT port = do
   -- create a TCP socket
   sock <- socket (addrFamily serveraddr) Stream defaultProtocol
 
-  putStrLn $ "did create socket with server address: " ++ show serveraddr
-
   -- bind the socket to the address and start listening
   bind sock (addrAddress serveraddr)
   listen sock 4
@@ -82,12 +80,12 @@ serveTTT port = do
               handleGameOver (Just $ playerFromMarker m game) game
               return ()
 
---          case isFull $ board game of
---            True -> do
---                      handleGameOver Nothing game
---                      return ()
---            False -> return ()
-                 
+          case isFull $ board game of
+            True -> do
+                      handleGameOver Nothing game
+                      return ()
+            False -> return ()
+
           -- | determine the current player
           let p = case currentPlayer $ board game of
                 Cross -> player1 game
@@ -114,9 +112,7 @@ serveTTT port = do
         getPlayerChoice :: Player -> IO (Int, Int)
         getPlayerChoice p = do
           col <- getPlayerInput p "column" 
-          putStrLn $ "did receive col: " ++ show col
           row <- getPlayerInput p "row"
-          putStrLn $ "did receive row: " ++ show row
           sendMessage (Message INFO "Wait for other player...") p
           return (col, row)
 
@@ -148,10 +144,7 @@ data Message = Message { msgType :: MsgType,
                          content :: String }
 
 instance Show Message where
-  show m
-   -- | msgType m == BOARD = "BOARD: \n" ++ show (decodeBoard (drop 1 $ content m))
-   -- | msgType m == BOARD = "BOARD: \n" ++ show (decodeBoard $ content m)
-    | otherwise = show (msgType m) ++ ": " ++ content m 
+  show m  = show (msgType m) ++ ": " ++ content m 
 
 broadcastMessage :: Message -> [Player] -> IO [()]
 broadcastMessage msg = mapM (sendMessage msg)
@@ -166,6 +159,7 @@ stringToMsg s
     | isPrefix "INFO" s = Message INFO $ drop 5 s
     | isPrefix "REQ_INPUT" s = Message REQ_INPUT $ drop 10 s
     | isPrefix "BOARD" s = Message BOARD $ drop 6 s
+    | isPrefix "GAME_OVER" s = Message GAME_OVER $ drop 10 s
     | otherwise = Message UNKNOWN s
 
 

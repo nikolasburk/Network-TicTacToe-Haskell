@@ -1,29 +1,35 @@
 import Network.Socket
 import Network.BSD
+import Control.Monad
 import System.IO
 import TTTServer
 import TicTacToe
-
+import Board
 
 playGame :: HostName -> String -> IO ()
 playGame hostname port = do
   p <- getPlayerFromConnection hostname port
-  playersTurn p 
+  playersTurn' p 
   return ()
 
+playersTurn' :: Player -> IO ()
+playersTurn' p = do
+  m <- hGetLine $ handle p
+  putStrLn m
+  maybeInp <- processMsg m
+  case maybeInp of
+    Nothing -> playersTurn' p
+    Just inp  -> do
+                   hPutStrLn (handle p) inp 
+                   playersTurn' p
 
-playersTurn :: Player -> IO ()
-playersTurn p = do
-  m1 <- hGetLine $ handle p
-  putStrLn $ "did reveive msg from server: " ++ m1
-  col <- getLine
-  hPutStrLn (handle p) col
-  m2 <- hGetLine $ handle p
-  putStrLn $ "did reveive msg from server: " ++ m2
-  row <- getLine
-  hPutStrLn (handle p) row
-  playersTurn p
-  return ()
+processMsg :: String -> IO (Maybe String)
+processMsg s = let msg = stringToMsg s
+                   in case msgType msg of
+                        REQ_INPUT -> do
+                          inp <- getLine
+                          return $ Just inp
+                        _ -> return Nothing
 
 getPlayerFromConnection :: HostName -> String -> IO Player
 getPlayerFromConnection hostname port = do
@@ -47,8 +53,8 @@ getPlayerFromConnection hostname port = do
   h <- socketToHandle sock ReadWriteMode
   hSetBuffering h LineBuffering
 
-  info <- hGetLine h
-  putStrLn $ "initial info: " ++ info
+  --info <- hGetLine h
+  --putStrLn $ "initial info: " ++ info
 
   return $ Player h Cross
 

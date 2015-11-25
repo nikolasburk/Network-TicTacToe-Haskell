@@ -65,6 +65,9 @@ boardFromRows rows
   | length rows /= 3 = Left ("Not the right number of rows: " ++ show (length rows))
   | otherwise = Right (BoardCons (rows !! 0) (rows !! 1) (rows !! 2))
 
+boardFromRows' :: [Row] -> Board
+boardFromRows' rows = (BoardCons (rows !! 0) (rows !! 1) (rows !! 2))
+
 
 -- checks the range of the indices
 isValidIndex :: (Int, Int) -> Bool
@@ -94,8 +97,8 @@ replaceRow newRow i (BoardCons r0 r1 r2)
 
 -- HELPERS: Board encoding / decoding
 
-decodeBoard :: String -> BoardOrMsg
-decodeBoard s = boardFromRows $ snd $ foldl dec (0, [], []) s 
+decodeBoard :: String -> Board
+decodeBoard s = boardFromRows' $ snd $ foldl dec (0, [], []) s 
   where snd (_, x, _) = x
 
 dec :: (Int, [Row], [Field])-> Char -> (Int, [Row], [Field])

@@ -18,13 +18,6 @@ data Game = Game { player1 :: Player,
 
 type PendingPlayers = [Handle]
 
-data MsgType = REQ_INPUT | INFO deriving (Eq, Show)
-data Message = Message { msgType :: MsgType,
-                         msg :: String }
-
-instance Show Message where
-  show m = show (msgType m) ++ ": " ++ msg m
-
 
 serveTTT :: String -> IO ()
 serveTTT port = do
@@ -77,9 +70,11 @@ serveTTT port = do
           sendMessage (Message INFO "You're playing 'O'") p2
           manageRound game
           return ()
-          
+
         manageRound :: Game -> IO () 
         manageRound game = do
+
+          -- | check if someone won the game already
           case checkWinnerPure $ board game of
             Nothing -> print $ board game
             Just p -> do
@@ -87,11 +82,15 @@ serveTTT port = do
               handleGameOver game
               return ()
 
+          -- | determined the current player
           let p = case currentPlayer $ board game of
                 Cross -> player1 game
                 Circle -> player2 game
-          --let boardInfo = "Board:\n" ++ show (board game)
-          --sendMessage (Message INFO boardInfo) p
+
+          -- | send the current board to the player
+          sendMessage (Message BOARD $ encodeBoard $ board game) p
+
+          -- | get the input from the current player
           (col, row) <- getPlayerChoice p
           case mkChoice (col, row, marker p) $ board game of
             Left msg -> do
@@ -103,6 +102,7 @@ serveTTT port = do
               manageRound newGame
           return ()
 
+        -- | get input from from a player
         getPlayerChoice :: Player -> IO (Int, Int)
         getPlayerChoice p = do
           col <- getPlayerInput p "column" 
@@ -130,16 +130,26 @@ serveTTT port = do
 
 -- | HELPERS: Messaging
 
+data MsgType = REQ_INPUT | INFO | BOARD | UNKNOWN deriving (Eq, Show)
+data Message = Message { msgType :: MsgType,
+                         content :: String}
+
+instance Show Message where
+  show m = show (msgType m) ++ ": " ++ content m 
+
 sendMessage :: Message -> Player -> IO ()
 sendMessage m p = do
-  hPrint (handle p) m 
+  hPrint (handle p) m
   putStrLn $ "did send message to client: " ++ show m
 
 stringToMsg :: String -> Message
 stringToMsg s 
-    | isPrefix "INFO" s = Message INFO (drop 5 s)
-    | isPrefix "REQ_INPUT" s = Message REQ_INPUT (drop 10 s)
+    | isPrefix "INFO" s = Message INFO $ drop 5 s
+    | isPrefix "REQ_INPUT" s = Message REQ_INPUT $ drop 10 s
+    | isPrefix "BOARD" s = Message BOARD $ drop 6 s
+    | otherwise = Message UNKNOWN s
 
+-- HELPERS :: General
 
 updateBoard :: Board -> Game -> Game
 updateBoard b g = Game (player1 g) (player2 g) b

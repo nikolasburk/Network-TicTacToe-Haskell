@@ -17,9 +17,6 @@ displayed on the console.
 
 ##### Remote game via TCP
 
-     citation
-
-
 1. Start game server in `ghci`:
     
         > ghci TTTServer.hs

@@ -31,6 +31,9 @@ instance Show Row where
 instance Show Board where
   show (BoardCons r0 r1 r2) =  show r0 ++ "\n" ++ show r1 ++ "\n" ++ show r2 
 
+isFull :: Board -> Bool
+isFull b = numberOfMarkers b Circle + numberOfMarkers b Cross == 9
+
 numberOfMarkers :: Board -> Marker -> Int
 numberOfMarkers b m = let fieldList = boardToList b
                         in length $ filter (hasMarker m) fieldList

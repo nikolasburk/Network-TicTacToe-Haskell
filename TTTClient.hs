@@ -14,22 +14,32 @@ playGame hostname port = do
 
 playersTurn' :: Player -> IO ()
 playersTurn' p = do
-  m <- hGetLine $ handle p
-  putStrLn m
-  maybeInp <- processMsg m
+  --m <- hGetLine $ handle p
+  --putStrLn m
+  msg <- receiveMsg p
+  maybeInp <- processMsg msg
   case maybeInp of
     Nothing -> playersTurn' p
     Just inp  -> do
                    hPutStrLn (handle p) inp 
                    playersTurn' p
 
-processMsg :: String -> IO (Maybe String)
-processMsg s = let msg = stringToMsg s
-                   in case msgType msg of
-                        REQ_INPUT -> do
-                          inp <- getLine
-                          return $ Just inp
-                        _ -> return Nothing
+receiveMsg :: Player -> IO Message
+receiveMsg p = do
+  m <- hGetLine $ handle p
+  let msg = stringToMsg m
+  case msgType msg of
+    --BOARD -> putStrLn ("BOARD:\n" ++ (show (decodeBoard (content msg))))
+    BOARD -> putStrLn ("BOARD:\n" ++ show (decodeBoard (tail $ content msg)))
+    _ -> print msg
+  return msg
+
+processMsg :: Message-> IO (Maybe String)
+processMsg msg = case msgType msg of
+                    REQ_INPUT -> do
+                       inp <- getLine
+                       return $ Just inp
+                    _ -> return Nothing
 
 getPlayerFromConnection :: HostName -> String -> IO Player
 getPlayerFromConnection hostname port = do
@@ -52,9 +62,6 @@ getPlayerFromConnection hostname port = do
   -- | turn socket into handle
   h <- socketToHandle sock ReadWriteMode
   hSetBuffering h LineBuffering
-
-  --info <- hGetLine h
-  --putStrLn $ "initial info: " ++ info
 
   return $ Player h Cross
 

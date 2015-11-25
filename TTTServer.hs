@@ -77,18 +77,26 @@ serveTTT port = do
           -- | check if someone won the game already
           case checkWinnerPure $ board game of
             Nothing -> print $ board game
-            Just p -> do
-              putStrLn $ "Player " ++ show p ++ " won the game"
-              handleGameOver game
+            Just m -> do
+              putStrLn $ "Player " ++ show m ++ " won the game"
+              handleGameOver (Just $ playerFromMarker m game) game
               return ()
 
-          -- | determined the current player
+--          case isFull $ board game of
+--            True -> do
+--                      handleGameOver Nothing game
+--                      return ()
+--            False -> return ()
+                 
+          -- | determine the current player
           let p = case currentPlayer $ board game of
                 Cross -> player1 game
                 Circle -> player2 game
 
           -- | send the current board to the player
-          sendMessage (Message BOARD $ encodeBoard $ board game) p
+          let bs = encodeBoard $ board game 
+          putStrLn $ "encoded: " ++ bs
+          sendMessage (Message BOARD bs) p
 
           -- | get the input from the current player
           (col, row) <- getPlayerChoice p
@@ -109,18 +117,23 @@ serveTTT port = do
           putStrLn $ "did receive col: " ++ show col
           row <- getPlayerInput p "row"
           putStrLn $ "did receive row: " ++ show row
+          sendMessage (Message INFO "Wait for other player...") p
           return (col, row)
 
         getPlayerInput :: Player -> String -> IO Int
         getPlayerInput p s = do
-          sendMessage (Message REQ_INPUT $ "Input " ++ s ++ ": ") p
+          sendMessage (Message REQ_INPUT $ "Please input " ++ s ++ ": ") p
           inp <- hGetLine (handle p)
           case readMaybe inp of
             Nothing -> getPlayerInput p s
             Just n -> return n
 
-        handleGameOver :: Game -> IO ()
-        handleGameOver game = do
+        handleGameOver :: Maybe Player -> Game -> IO ()
+        handleGameOver p game = do
+          let msgContent = case p of
+                Nothing -> "The game ends with a tie"
+                Just p -> "Congratulations to player '" ++ show (marker p) ++ "'"
+          _ <- broadcastMessage (Message GAME_OVER msgContent) [player1 game, player2 game] 
           hClose (handle $ player1 game)
           hClose (handle $ player2 game)
           tId <- myThreadId
@@ -130,12 +143,18 @@ serveTTT port = do
 
 -- | HELPERS: Messaging
 
-data MsgType = REQ_INPUT | INFO | BOARD | UNKNOWN deriving (Eq, Show)
+data MsgType = REQ_INPUT | INFO | GAME_OVER | BOARD | UNKNOWN deriving (Eq, Show)
 data Message = Message { msgType :: MsgType,
-                         content :: String}
+                         content :: String }
 
 instance Show Message where
-  show m = show (msgType m) ++ ": " ++ content m 
+  show m
+   -- | msgType m == BOARD = "BOARD: \n" ++ show (decodeBoard (drop 1 $ content m))
+   -- | msgType m == BOARD = "BOARD: \n" ++ show (decodeBoard $ content m)
+    | otherwise = show (msgType m) ++ ": " ++ content m 
+
+broadcastMessage :: Message -> [Player] -> IO [()]
+broadcastMessage msg = mapM (sendMessage msg)
 
 sendMessage :: Message -> Player -> IO ()
 sendMessage m p = do
@@ -149,13 +168,14 @@ stringToMsg s
     | isPrefix "BOARD" s = Message BOARD $ drop 6 s
     | otherwise = Message UNKNOWN s
 
+
 -- HELPERS :: General
 
 updateBoard :: Board -> Game -> Game
 updateBoard b g = Game (player1 g) (player2 g) b
 
 toTuple :: [a] -> (a, a)
-toTuple (x:y:xs) = (x, y)
+toTuple (x:y:_) = (x, y)
 
 isPrefix :: String -> String -> Bool
 isPrefix [] _ = True
@@ -164,3 +184,6 @@ isPrefix (p:ps) (x:xs)
   | p == x    = isPrefix ps xs
   | otherwise = False
 
+playerFromMarker :: Marker -> Game -> Player
+playerFromMarker m g = if marker (player1 g) == m then player1 g
+                                                  else player2 g
